@@ -1,0 +1,43 @@
+<html>
+<head>
+  <title>Network</title>
+  <script src="javascripts/lib/leap-0.6.1-protocolEvents.js"></script>
+  <script src="//js.leapmotion.com/leap-plugins-0.1.6.js"></script>
+
+  <script src="http://cdn.peerjs.com/0.3/peer.js"></script>
+  <script src="javascripts/leapjs.networking-0.1.js"></script>
+
+</head>
+<body>
+
+
+<div>
+  <input id="connectTo">
+  <button id="connect">connect</button>
+</div>
+
+
+
+  <script type="text/javascript">
+
+    window.controller = new Leap.Controller();
+    controller.use('networking', {
+      peer: new Peer({key: 'ah7pg4vez7kz9f6r'})
+    });
+    controller.connect();
+
+    var peer = controller.plugins.networking.peer;
+
+    peer.on('open', function(id){
+      window.location.hash = id;
+    });
+
+
+    document.getElementById('connect').onclick = function(){
+      controller.plugins.networking.connect(document.getElementById('connectTo').value);
+    }
+  </script>
+
+
+</body>
+</html>
