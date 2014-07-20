@@ -107,7 +107,7 @@ Leap.plugin 'networking', (scope)->
   # currently: one connection to one other client
   scope.connection = null
   scope.sendFrames = false
-  scope.maxSendRate = 100 # ms
+  scope.maxSendRate = 60 # ms
   scope.frozenHandTimeout = 250 # ms
 
   frameSplicer = null
@@ -150,15 +150,19 @@ Leap.plugin 'networking', (scope)->
     frameSplicer.remoteFrameLoop();
   , 1000
 
+  controller.on 'streamingStopped', ->
+    frameSplicer.remoteFrameLoop();
+
+
 
   # begin lastFrame logic.  Should be in its own class?
 
   scope.lastFrame = null
 
   scope.shouldSendFrame = (frameData)->
-    # maximum 1 fps:
+    # maximum fps:
     return false if scope.lastFrame and (scope.lastFrame.sentAt + scope.maxSendRate) > (new Date).getTime()
-
+    # no empty frames:
     return false if !scope.lastFrame and frameData.hands.length == 0
 
     return false if  scope.lastFrame and scope.lastFrame.hands.length == 0 and frameData.hands.length == 0
@@ -178,7 +182,7 @@ Leap.plugin 'networking', (scope)->
   # end lastFrame logic.
 
 
-
+  # return controller callbacks:
   return {
 
     beforeFrameCreated: (frameData)->

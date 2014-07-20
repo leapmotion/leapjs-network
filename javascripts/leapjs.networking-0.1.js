@@ -114,7 +114,7 @@
     }
     scope.connection = null;
     scope.sendFrames = false;
-    scope.maxSendRate = 100;
+    scope.maxSendRate = 60;
     scope.frozenHandTimeout = 250;
     frameSplicer = null;
     scope.peer.on('error', function(error) {
@@ -148,6 +148,9 @@
     setTimeout(function() {
       return frameSplicer.remoteFrameLoop();
     }, 1000);
+    controller.on('streamingStopped', function() {
+      return frameSplicer.remoteFrameLoop();
+    });
     scope.lastFrame = null;
     scope.shouldSendFrame = function(frameData) {
       if (scope.lastFrame && (scope.lastFrame.sentAt + scope.maxSendRate) > (new Date).getTime()) {
