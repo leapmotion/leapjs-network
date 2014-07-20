@@ -3,9 +3,28 @@
   var FrameSplicer;
 
   FrameSplicer = (function() {
-    function FrameSplicer(userId) {
+    function FrameSplicer(controller, userId) {
+      var frameSplicer;
       this.userId = userId;
+      this.controller = controller;
+      this.remoteFrames = {};
       console.assert(this.userId);
+      frameSplicer = this;
+      this.remoteFrameLoop = function() {
+        var frame, frameData;
+        if (this.controller.streaming()) {
+          return;
+        }
+        frameData = {
+          hands: [],
+          pointables: []
+        };
+        frameSplicer.addRemoteFrameData(frameData);
+        frame = new Leap.Frame(frameData);
+        frameSplicer.supplementFinishedFrame(frame, frameData);
+        window.controller.processFrame(frame);
+        return window.requestAnimationFrame(frameSplicer.remoteFrameLoop);
+      };
     }
 
     FrameSplicer.prototype.makeIdsUniversal = function(frameData) {
@@ -28,6 +47,52 @@
       return _results;
     };
 
+    FrameSplicer.prototype.receiveRemoteFrame = function(userId, frameData) {
+      return this.remoteFrames[userId] = frameData;
+    };
+
+    FrameSplicer.prototype.addRemoteFrameData = function(frameData) {
+      var hand, pointable, remoteFrame, userId, _i, _len, _ref, _ref1, _results;
+      _ref = this.remoteFrames;
+      _results = [];
+      for (userId in _ref) {
+        remoteFrame = _ref[userId];
+        _ref1 = remoteFrame.hands;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          hand = _ref1[_i];
+          frameData.hands.push(hand);
+        }
+        _results.push((function() {
+          var _j, _len1, _ref2, _results1;
+          _ref2 = remoteFrame.pointables;
+          _results1 = [];
+          for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+            pointable = _ref2[_j];
+            _results1.push(frameData.pointables.push(pointable));
+          }
+          return _results1;
+        })());
+      }
+      return _results;
+    };
+
+    FrameSplicer.prototype.supplementFinishedFrame = function(frame, rawFrameData) {
+      var hand, i, pointable, _i, _j, _len, _len1, _ref, _ref1, _results;
+      _ref = frame.hands;
+      for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+        hand = _ref[i];
+        hand.id = rawFrameData.hands[i].id;
+        hand.userId = rawFrameData.hands[i].userId;
+      }
+      _ref1 = frame.pointables;
+      _results = [];
+      for (i = _j = 0, _len1 = _ref1.length; _j < _len1; i = ++_j) {
+        pointable = _ref1[i];
+        _results.push(pointable.userId = rawFrameData.pointables[i].userId);
+      }
+      return _results;
+    };
+
     return FrameSplicer;
 
   })();
@@ -36,9 +101,11 @@
     var frameSplicer;
     if (!scope.peer) {
       console.warn("No Peer supplied");
+      return;
     }
     scope.connection = null;
     scope.sendFrames = false;
+    scope.maxSendRate = 100;
     frameSplicer = null;
     scope.peer.on('error', function(error) {
       console.log('peerjs error, not sending frames:', error, error.type);
@@ -57,12 +124,40 @@
     scope.connectionEstablished = function() {
       scope.sendFrames = true;
       return scope.connection.on('data', function(data) {
-        return console.log('received:', data);
+        if (data.frameData) {
+          return frameSplicer.receiveRemoteFrame(scope.connection.peer, data.frameData);
+        }
       });
     };
-    scope.peer.on('open', function(id) {
-      return frameSplicer = new FrameSplicer(id);
-    });
+    scope.peer.on('open', (function(_this) {
+      return function(id) {
+        console.log("Peer ID received: " + id);
+        return frameSplicer = new FrameSplicer(_this, id);
+      };
+    })(this));
+    setTimeout(function() {
+      return frameSplicer.remoteFrameLoop();
+    }, 1000);
+    scope.lastFrameSent = null;
+    scope.shouldSendFrame = function(frameData) {
+      if (!((new Date).getTime() > (scope.lastFrameSent + scope.maxSendRate))) {
+        return false;
+      }
+      if (!(frameData.hands.length > 0)) {
+        return false;
+      }
+      return true;
+    };
+    scope.sendFrame = function(frameData) {
+      if (!scope.shouldSendFrame(frameData)) {
+        return;
+      }
+      scope.connection.send({
+        frameData: frameData
+      });
+      console.log('s');
+      return scope.lastFrameSent = (new Date).getTime();
+    };
     return {
       beforeFrameCreated: function(frameData) {
         if (!scope.sendFrames) {
@@ -70,25 +165,10 @@
         }
         console.assert(frameSplicer);
         frameSplicer.makeIdsUniversal(frameData);
-        console.log('send frame', frameData.id);
-        return scope.connection.send(frameData.id);
+        scope.sendFrame(frameData);
+        return frameSplicer.addRemoteFrameData(frameData);
       },
-      afterFrameCreated: function(frame, rawFrameData) {
-        var hand, i, pointable, _i, _j, _len, _len1, _ref, _ref1, _results;
-        _ref = frame.hands;
-        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-          hand = _ref[i];
-          hand.id = rawFrameData.hands[i].id;
-          hand.userId = rawFrameData.hands[i].userId;
-        }
-        _ref1 = frame.pointables;
-        _results = [];
-        for (i = _j = 0, _len1 = _ref1.length; _j < _len1; i = ++_j) {
-          pointable = _ref1[i];
-          _results.push(pointable.userId = rawFrameData.pointables[i].userId);
-        }
-        return _results;
-      }
+      afterFrameCreated: FrameSplicer.prototype.supplementFinishedFrame
     };
   });
 

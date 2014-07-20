@@ -9,11 +9,44 @@
 # Multicast would require a more complex setup, requiring a server or a slew of 1:1 connections
 # see http://stackoverflow.com/questions/15504933/does-webrtc-allow-one-to-many-multicast-connections
 
+# hit list / todo list
+# minimize CPU/maximize frame rate
+# graph streaming data
+# make reconnection-robust
+# allow observers
+
 # note: could this be better factored as an alternative protocol?
 class FrameSplicer
-  constructor: (userId)->
+  constructor: (controller, userId)->
     @userId = userId
+    @controller = controller
+
+    @remoteFrames = {}
     console.assert @userId
+
+    frameSplicer = this
+
+    @remoteFrameLoop = ->
+      # this method is similar to the LeapJS protocol
+
+      return if @controller.streaming()
+
+      # stub which gets frames merged to it:
+      frameData = {
+        hands: []
+        pointables: []
+      }
+
+      frameSplicer.addRemoteFrameData(frameData)
+
+      frame = new Leap.Frame(frameData);
+
+      frameSplicer.supplementFinishedFrame(frame, frameData)
+
+      # this calls immediately, as there is no frame loop running for Leap-less clients.
+      window.controller.processFrame(frame);
+
+      window.requestAnimationFrame frameSplicer.remoteFrameLoop
 
   makeIdsUniversal: (frameData) ->
     frameData.id += '-' + @userId
@@ -28,13 +61,44 @@ class FrameSplicer
       pointable.id += '-' + @userId
       pointable.handId += '-' + @userId
 
+  receiveRemoteFrame: (userId, frameData)->
+    @remoteFrames[userId] = frameData
+
+  # merges stockpiled frames with the given frame
+  addRemoteFrameData: (frameData)->
+    for userId, remoteFrame of @remoteFrames
+      # need if hands check here?
+      for hand in remoteFrame.hands
+        frameData.hands.push hand
+
+      for pointable in remoteFrame.pointables
+        frameData.pointables.push pointable
+
+  supplementFinishedFrame: (frame, rawFrameData) ->
+    # note that this violates certain speed javascript principles:
+    # properties should not be added to objects "on the fly" after construction
+
+    for hand, i in frame.hands
+      hand.id = rawFrameData.hands[i].id
+      hand.userId = rawFrameData.hands[i].userId
+
+    for pointable, i in frame.pointables
+      pointable.userId = rawFrameData.pointables[i].userId
+
+
+
+
 # designed to only handle one connection.
 Leap.plugin 'networking', (scope)->
-  console.warn "No Peer supplied" unless scope.peer
+
+  unless scope.peer
+    console.warn "No Peer supplied"
+    return
 
   # currently: one connection to one other client
   scope.connection = null
   scope.sendFrames = false
+  scope.maxSendRate = 100 # ms
 
   frameSplicer = null
 
@@ -62,17 +126,40 @@ Leap.plugin 'networking', (scope)->
 
     # enable receiving of frame data
     scope.connection.on 'data', (data)->
-      console.log 'received:', data
-
-      # if receiving frame data and not connected, give to the splicer and then render it
-      # perhaps the splicer has it's own animate loop
-      # should work with LeapJS's
+      if data.frameData
+        frameSplicer.receiveRemoteFrame(scope.connection.peer, data.frameData)
 
 
-      # merge frame data here
 
-  scope.peer.on 'open', (id)->
-    frameSplicer = new FrameSplicer(id)
+  scope.peer.on 'open', (id)=>
+    console.log "Peer ID received: #{id}"
+    frameSplicer = new FrameSplicer(this, id)
+
+  # give a second to begin local streaming  connect before immediately starting our own animation Loop
+  setTimeout  ->
+    frameSplicer.remoteFrameLoop();
+  , 1000
+
+  scope.lastFrameSent = null
+
+  scope.shouldSendFrame = (frameData)->
+    # maximum 1 fps:
+    return false unless (new Date).getTime() > (scope.lastFrameSent + scope.maxSendRate)
+
+    return false unless frameData.hands.length > 0
+
+    return true
+
+  scope.sendFrame = (frameData)->
+    return unless scope.shouldSendFrame(frameData)
+
+    scope.connection.send {
+      frameData: frameData
+    }
+    console.log 's'
+
+    scope.lastFrameSent = (new Date).getTime()
+
 
 
 
@@ -86,26 +173,12 @@ Leap.plugin 'networking', (scope)->
 
       frameSplicer.makeIdsUniversal(frameData)
 
-      console.log 'send frame', frameData.id
-      scope.connection.send frameData.id
+      scope.sendFrame(frameData)
 
-    # operates on top of spliced frame from multiple peers because uses raw frame data
+      # doesn't clear remote person's frame, so they'll appear to freeze if they lag, but won't disappear
+      frameSplicer.addRemoteFrameData(frameData)
 
-    # splicer needs to merge frame on its own animation loop
-    # can we force LeapJS to render every one of what it thinks to be "device frames", thereby allowing us full-control
-    # of render rate?
-    # pretty much re-implementing LeapJS's frame loop.
-    # need to takeover the behavior from the plugin?
-    # for now, manually specify that the controller must be using frameEventName: DeviceFrame
-    afterFrameCreated: (frame, rawFrameData) ->
-      # note that this violates certain speed javascript principles:
-      # properties should not be added to objects "on the fly" after construction
 
-      for hand, i in frame.hands
-        hand.id = rawFrameData.hands[i].id
-        hand.userId = rawFrameData.hands[i].userId
-
-      for pointable, i in frame.pointables
-        pointable.userId = rawFrameData.pointables[i].userId
+    afterFrameCreated: FrameSplicer.prototype.supplementFinishedFrame
 
   }

@@ -30,6 +30,7 @@
   <script type="text/javascript">
 
     window.controller = new Leap.Controller({
+      background: true
     });
 
     controller.use('networking', {
@@ -37,13 +38,14 @@
     });
 
     controller.use('riggedHand', {
-      boneLabels: function(boneMesh, leapHand){
-        if (boneMesh.name != "Wrist") return;
-        return leapHand.id
-      }
+// turns out that this function is horrendously slow.
+//      boneLabels: function(boneMesh, leapHand){
+//        if (boneMesh.name != "Wrist") return;
+//        return leapHand.id
+//      }
     });
 
-    controller.connect();
+//    controller.connect();
 
     var peer = controller.plugins.networking.peer;
 
