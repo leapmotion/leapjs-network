@@ -4,8 +4,17 @@
   <script src="javascripts/lib/leap-0.6.1-protocolEvents.js"></script>
   <script src="//js.leapmotion.com/leap-plugins-0.1.6.js"></script>
 
+  <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r68/three.min.js"></script>
+  <script src="javascripts/lib/leap.rigged-hand-0.1.4.js"></script>
+
   <script src="http://cdn.peerjs.com/0.3/peer.js"></script>
   <script src="javascripts/leapjs.networking-0.1.js"></script>
+
+  <style>
+    canvas {
+      pointer-events: none;
+    }
+  </style>
 
 </head>
 <body>
@@ -20,10 +29,20 @@
 
   <script type="text/javascript">
 
-    window.controller = new Leap.Controller();
+    window.controller = new Leap.Controller({
+    });
+
     controller.use('networking', {
       peer: new Peer({key: 'ah7pg4vez7kz9f6r'})
     });
+
+    controller.use('riggedHand', {
+      boneLabels: function(boneMesh, leapHand){
+        if (boneMesh.name != "Wrist") return;
+        return leapHand.id
+      }
+    });
+
     controller.connect();
 
     var peer = controller.plugins.networking.peer;
