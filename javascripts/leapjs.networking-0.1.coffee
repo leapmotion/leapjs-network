@@ -66,6 +66,8 @@ class FrameSplicer
   receiveRemoteFrame: (userId, frameData)->
     # don't add old frames
     return if @remoteFrames[userId] and (@remoteFrames[userId].timestamp > frameData.timestamp)
+    previousFrameData = @remoteFrames[userId]
+    return if previousFrameData and (previousFrameData.timestamp > frameData.timestamp)
 
     @remoteFrames[userId] = frameData
 
