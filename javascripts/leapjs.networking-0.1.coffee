@@ -62,6 +62,9 @@ class FrameSplicer
       pointable.handId += '-' + @userId
 
   receiveRemoteFrame: (userId, frameData)->
+    # don't add old frames
+    return if @remoteFrames[userId] and (@remoteFrames[userId].timestamp > frameData.timestamp)
+
     @remoteFrames[userId] = frameData
 
   # merges stockpiled frames with the given frame
