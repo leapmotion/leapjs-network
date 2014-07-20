@@ -148,12 +148,15 @@
     setTimeout(function() {
       return frameSplicer.remoteFrameLoop();
     }, 1000);
-    scope.lastFrameSent = null;
+    scope.lastFrame = null;
     scope.shouldSendFrame = function(frameData) {
-      if (!((new Date).getTime() > (scope.lastFrameSent + scope.maxSendRate))) {
+      if (scope.lastFrame && (scope.lastFrame.sentAt + scope.maxSendRate) > (new Date).getTime()) {
         return false;
       }
-      if (!(frameData.hands.length > 0)) {
+      if (!scope.lastFrame && frameData.hands.length === 0) {
+        return false;
+      }
+      if (scope.lastFrame && scope.lastFrame.hands.length === 0 && frameData.hands.length === 0) {
         return false;
       }
       return true;
@@ -166,7 +169,7 @@
         frameData: frameData
       });
       console.log('s');
-      return scope.lastFrameSent = (new Date).getTime();
+      return scope.lastFrame = frameData;
     };
     return {
       beforeFrameCreated: function(frameData) {

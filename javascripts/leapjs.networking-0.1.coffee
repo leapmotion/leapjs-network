@@ -150,13 +150,18 @@ Leap.plugin 'networking', (scope)->
     frameSplicer.remoteFrameLoop();
   , 1000
 
-  scope.lastFrameSent = null
+
+  # begin lastFrame logic.  Should be in its own class?
+
+  scope.lastFrame = null
 
   scope.shouldSendFrame = (frameData)->
     # maximum 1 fps:
-    return false unless (new Date).getTime() > (scope.lastFrameSent + scope.maxSendRate)
+    return false if scope.lastFrame and (scope.lastFrame.sentAt + scope.maxSendRate) > (new Date).getTime()
 
-    return false unless frameData.hands.length > 0
+    return false if !scope.lastFrame and frameData.hands.length == 0
+
+    return false if  scope.lastFrame and scope.lastFrame.hands.length == 0 and frameData.hands.length == 0
 
     return true
 
@@ -168,8 +173,9 @@ Leap.plugin 'networking', (scope)->
     }
     console.log 's'
 
-    scope.lastFrameSent = (new Date).getTime()
+    scope.lastFrame  =  frameData
 
+  # end lastFrame logic.
 
 
 
