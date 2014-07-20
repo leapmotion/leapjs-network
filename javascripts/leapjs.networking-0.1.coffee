@@ -26,7 +26,7 @@ class FramePacker
     @packingStructure = [
       'id',
       'timestamp',
-      'sentAt',∞
+      'sentAt',
       {hands: [[
         'id',
         'type',

@@ -5,7 +5,7 @@
   FramePacker = (function() {
     function FramePacker(options) {
       this.packingStructure = [
-        'id', 'timestamp', 'sentAt', ∞, {
+        'id', 'timestamp', 'sentAt', {
           hands: [['id', 'type', 'direction', 'palmNormal', 'palmPosition', 'pinchStrength', 'grabStrength']]
         }, {
           pointables: [['id', 'direction', 'handId', 'length', 'tipPosition', 'carpPosition', 'mcpPosition', 'pipPosition', 'dipPosition', 'btipPosition', 'type']]
