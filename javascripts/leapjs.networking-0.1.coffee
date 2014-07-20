@@ -15,7 +15,106 @@
 # make reconnection-robust
 # allow observers
 
-# note: could this be better factored as an alternative protocol?
+
+# turns a frame from a JSON blog to an array, specifically formatted, with a subset of frameData
+# ripped from playback
+class FramePacker
+  # todo: LERP frames
+
+  constructor: (options)->
+    # see https://github.com/leapmotion/leapjs/blob/master/Leap_JSON.rst
+    @packingStructure = [
+      'id',
+      'timestamp',
+      'sentAt',∞
+      {hands: [[
+        'id',
+        'type',
+        'direction',
+        'palmNormal',
+        'palmPosition',
+        'pinchStrength',
+        'grabStrength',
+      ]]},
+      {pointables: [[
+        'id',
+        'direction',
+        'handId',
+        'length',
+        'tipPosition',
+        'carpPosition',
+        'mcpPosition',
+        'pipPosition',
+        'dipPosition',
+        'btipPosition',
+        'type'
+      ]]}
+    ];
+    
+  pack: (frameData)->
+    @packData(@packingStructure, frameData)
+  
+  packData: (structure, data)->
+    out = []
+
+    for nameOrHash in structure
+      
+      # e.g., nameOrHash is either 'id' or {hand: [...]}
+      if typeof nameOrHash is "string"
+        
+        out.push data[nameOrHash]
+        
+      else if Object::toString.call(nameOrHash) is "[object Array]"
+        
+        # nested array, such as hands or fingers
+
+        for datum in data
+          out.push @packData(nameOrHash, datum)
+
+      else # key-value (nested object) such as interactionBox
+        for key of nameOrHash
+          break
+
+        out.push @packData(nameOrHash[key], data[key])
+        
+    out
+
+  unpack: (frameData) ->
+    @unpackData(@packingStructure, frameData)
+    
+  unpackData: (structure, data) ->
+    out = {}
+
+    for nameOrHash, i in structure
+      # e.g., nameOrHash is either 'id' or {hand: [...]}
+
+      if typeof nameOrHash is "string"
+
+        out[nameOrHash] = data[i]
+
+      else if Object::toString.call(nameOrHash) is "[object Array]"
+
+        # nested array, such as hands or fingers
+        # nameOrHash ["id", "direction", "palmNormal", "palmPosition", "palmVelocity"]
+        # data [ [ 31, [vec3], [vec3], ...] ]
+        subArray = []
+
+        for datum in data
+          subArray.push @unpackData(nameOrHash, datum)
+
+        return subArray
+
+      else # key-value (nested object) such as interactionBox
+
+        for key of nameOrHash
+          break
+
+        out[key] = @unpackData(nameOrHash[key], data[i])
+
+    out
+    
+  
+
 class FrameSplicer
   constructor: (controller, userId, options)->
     @userId = userId
@@ -140,6 +239,7 @@ Leap.plugin 'networking', (scope)->
   scope.frozenHandTimeout = 250 # ms
 
   frameSplicer = null
+  framePacker = new FramePacker
 
   scope.peer.on 'error', (error)->
     console.log 'peerjs error, not sending frames:', error, error.type
@@ -169,8 +269,13 @@ Leap.plugin 'networking', (scope)->
 
     # enable receiving of frame data
     scope.connection.on 'data', (data)->
+
       if data.frameData
-        frameSplicer.receiveRemoteFrame(scope.connection.peer, data.frameData)
+
+        # does this take time? Or save time?
+        frameData = framePacker.unpack(data.frameData)
+
+        frameSplicer.receiveRemoteFrame(scope.connection.peer, frameData)
 
 
 
@@ -210,7 +315,7 @@ Leap.plugin 'networking', (scope)->
     # for now we read the outgoing blob byte size
     # it is unknown how this relates to actual size-over wire.
     blob = scope.connection.send {
-      frameData: frameData
+      frameData: framePacker.pack(frameData)
     }
     # two graphs:
     # kb/frame
@@ -229,7 +334,7 @@ Leap.plugin 'networking', (scope)->
     scope.plotter.draw()
 
 
-    scope.lastFrame  =  frameData
+    scope.lastFrame = frameData
 
   # end lastFrame logic.
 
