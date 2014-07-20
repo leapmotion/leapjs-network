@@ -50,10 +50,31 @@
     };
 
     FrameSplicer.prototype.receiveRemoteFrame = function(userId, frameData) {
-      if (this.remoteFrames[userId] && (this.remoteFrames[userId].timestamp > frameData.timestamp)) {
+      var previousFrameData;
+      previousFrameData = this.remoteFrames[userId];
+      if (previousFrameData && (previousFrameData.timestamp > frameData.timestamp)) {
         return;
       }
+      frameData.receivedAt = (new Date).getTime();
+      if (this.options.plotter) {
+        this.plotFrameData(frameData, previousFrameData);
+      }
       return this.remoteFrames[userId] = frameData;
+    };
+
+    FrameSplicer.prototype.plotFrameData = function(frameData, previousFrameData) {
+      this.options.plotter.plot('network latency', frameData.receivedAt - frameData.sentAt, {
+        units: 'ms',
+        precision: 3
+      });
+      if (previousFrameData) {
+        this.options.plotter.plot('framerate (incoming)', 1000 / (frameData.receivedAt - previousFrameData.receivedAt), {
+          units: 'fps',
+          precision: 3
+        });
+      }
+      this.options.plotter.clear();
+      return this.options.plotter.draw();
     };
 
     FrameSplicer.prototype.addRemoteFrameData = function(frameData) {

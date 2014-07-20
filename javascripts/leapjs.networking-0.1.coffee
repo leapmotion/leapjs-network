@@ -65,11 +65,38 @@ class FrameSplicer
 
   receiveRemoteFrame: (userId, frameData)->
     # don't add old frames
-    return if @remoteFrames[userId] and (@remoteFrames[userId].timestamp > frameData.timestamp)
     previousFrameData = @remoteFrames[userId]
+
     return if previousFrameData and (previousFrameData.timestamp > frameData.timestamp)
 
+    frameData.receivedAt = (new Date).getTime()
+
+    if (@options.plotter)
+      @plotFrameData(frameData, previousFrameData)
+
     @remoteFrames[userId] = frameData
+
+  plotFrameData: (frameData, previousFrameData)->
+    # this is the network latency - there is additional time waiting for the animation frame
+    @options.plotter.plot 'network latency',
+      frameData.receivedAt - frameData.sentAt,
+      {
+        units: 'ms',
+        precision: 3
+      }
+
+    if previousFrameData
+      @options.plotter.plot 'framerate (incoming)',
+        1000 / (frameData.receivedAt - previousFrameData.receivedAt),
+        {
+          units: 'fps'
+          precision: 3
+        }
+
+
+    @options.plotter.clear();
+    @options.plotter.draw();
+
 
   # merges stockpiled frames with the given frame
   addRemoteFrameData: (frameData)->

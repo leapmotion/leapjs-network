@@ -10,9 +10,18 @@
   <script src="http://cdn.peerjs.com/0.3/peer.js"></script>
   <script src="javascripts/leapjs.networking-0.1.js"></script>
 
+  <script src="javascripts/lib/LeapDataPlotter.js"></script>
+
   <style>
     canvas {
       pointer-events: none;
+    }
+    canvas.leap-data-plotter{
+      width: 300px;
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      height: 100px; /* 50px per graph */
     }
   </style>
 
@@ -34,7 +43,8 @@
     });
 
     controller.use('networking', {
-      peer: new Peer({key: 'ah7pg4vez7kz9f6r'})
+      peer: new Peer({key: 'ah7pg4vez7kz9f6r'}),
+      plotter: new LeapDataPlotter()
     });
 
     controller.use('riggedHand', {
@@ -49,6 +59,7 @@
 
     var peer = controller.plugins.networking.peer;
 
+    window.location.hash = '';
     peer.on('open', function(id){
       window.location.hash = id;
     });
