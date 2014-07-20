@@ -186,13 +186,19 @@
       return true;
     };
     scope.sendFrame = function(frameData) {
+      var blob;
       if (!scope.shouldSendFrame(frameData)) {
         return;
       }
-      scope.connection.send({
+      blob = scope.connection.send({
         frameData: frameData
       });
-      console.log('s');
+      scope.plotter.plot('frame size (outgoing)', blob.size / 1024, {
+        units: 'kb',
+        precision: 3
+      });
+      scope.plotter.clear();
+      scope.plotter.draw();
       return scope.lastFrame = frameData;
     };
     return {

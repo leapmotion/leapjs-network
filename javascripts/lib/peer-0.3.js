@@ -2042,6 +2042,11 @@ DataConnection.prototype.send = function(data, chunked) {
       util.blobToArrayBuffer(blob, function(ab) {
         self._bufferedSend(ab);
       });
+
+      // added by peter:
+      return blob;
+
+
     } else {
       this._bufferedSend(blob);
     }

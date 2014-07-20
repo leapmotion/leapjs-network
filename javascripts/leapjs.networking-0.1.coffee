@@ -159,6 +159,10 @@ Leap.plugin 'networking', (scope)->
     scope.connectionEstablished()
 
   # we have this custom callback as the peerjs on connection only fires for incoming, not outbound.
+  # note that WebRTC data doesn't support blob type yet, which causes expensive packing
+  # https://bugs.webkit.org/show_bug.cgi?id=112314
+  # see https://github.com/peers/peerjs/blob/master/lib/dataconnection.js#L182-L183
+  # and util.supports.binaryBlob
   scope.connectionEstablished = ->
 
     scope.sendFrames = true
@@ -201,10 +205,29 @@ Leap.plugin 'networking', (scope)->
   scope.sendFrame = (frameData)->
     return unless scope.shouldSendFrame(frameData)
 
-    scope.connection.send {
+    # it seems non-trivial to get the size of the ArrayBuffer on the receiving end, as datachannel's onmessage event.data
+    # appears to arrive as an ArrayBuffer with indeterminate length.
+    # for now we read the outgoing blob byte size
+    # it is unknown how this relates to actual size-over wire.
+    blob = scope.connection.send {
       frameData: frameData
     }
-    console.log 's'
+    # two graphs:
+    # kb/frame
+    # fb/s
+    # we call plotter clear and draw here
+    # not sure what will happen when both receiving and sending call to update the graph :P
+
+    scope.plotter.plot 'frame size (outgoing)',
+      blob.size / 1024,
+      {
+        units: 'kb'
+        precision: 3
+      }
+
+    scope.plotter.clear()
+    scope.plotter.draw()
+
 
     scope.lastFrame  =  frameData
 
