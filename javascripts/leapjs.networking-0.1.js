@@ -3,10 +3,11 @@
   var FrameSplicer;
 
   FrameSplicer = (function() {
-    function FrameSplicer(controller, userId) {
+    function FrameSplicer(controller, userId, options) {
       var frameSplicer;
       this.userId = userId;
       this.controller = controller;
+      this.options = options;
       this.remoteFrames = {};
       console.assert(this.userId);
       frameSplicer = this;
@@ -27,9 +28,10 @@
       };
     }
 
-    FrameSplicer.prototype.makeIdsUniversal = function(frameData) {
+    FrameSplicer.prototype.supplementLocalFrameData = function(frameData) {
       var hand, pointable, _i, _j, _len, _len1, _ref, _ref1, _results;
       frameData.id += '-' + this.userId;
+      frameData.sentAt = (new Date).getTime();
       _ref = frameData.hands;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         hand = _ref[_i];
@@ -48,6 +50,9 @@
     };
 
     FrameSplicer.prototype.receiveRemoteFrame = function(userId, frameData) {
+      if (this.remoteFrames[userId] && (this.remoteFrames[userId].timestamp > frameData.timestamp)) {
+        return;
+      }
       return this.remoteFrames[userId] = frameData;
     };
 
@@ -57,6 +62,10 @@
       _results = [];
       for (userId in _ref) {
         remoteFrame = _ref[userId];
+        if ((new Date).getTime() > (remoteFrame.sentAt + this.options.frozenHandTimeout)) {
+          delete this.remoteFrames[userId];
+          break;
+        }
         _ref1 = remoteFrame.hands;
         for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
           hand = _ref1[_i];
@@ -106,6 +115,7 @@
     scope.connection = null;
     scope.sendFrames = false;
     scope.maxSendRate = 100;
+    scope.frozenHandTimeout = 250;
     frameSplicer = null;
     scope.peer.on('error', function(error) {
       console.log('peerjs error, not sending frames:', error, error.type);
@@ -132,7 +142,7 @@
     scope.peer.on('open', (function(_this) {
       return function(id) {
         console.log("Peer ID received: " + id);
-        return frameSplicer = new FrameSplicer(_this, id);
+        return frameSplicer = new FrameSplicer(_this, id, scope);
       };
     })(this));
     setTimeout(function() {
@@ -164,7 +174,7 @@
           return;
         }
         console.assert(frameSplicer);
-        frameSplicer.makeIdsUniversal(frameData);
+        frameSplicer.supplementLocalFrameData(frameData);
         scope.sendFrame(frameData);
         return frameSplicer.addRemoteFrameData(frameData);
       },

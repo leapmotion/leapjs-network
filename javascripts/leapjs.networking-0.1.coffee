@@ -17,9 +17,10 @@
 
 # note: could this be better factored as an alternative protocol?
 class FrameSplicer
-  constructor: (controller, userId)->
+  constructor: (controller, userId, options)->
     @userId = userId
     @controller = controller
+    @options = options
 
     @remoteFrames = {}
     console.assert @userId
@@ -48,8 +49,9 @@ class FrameSplicer
 
       window.requestAnimationFrame frameSplicer.remoteFrameLoop
 
-  makeIdsUniversal: (frameData) ->
+  supplementLocalFrameData: (frameData) ->
     frameData.id += '-' + @userId
+    frameData.sentAt = (new Date).getTime()
 
     for hand in frameData.hands
       # hand is the rootmost object of a player, esp. after frames get merged.
@@ -70,7 +72,11 @@ class FrameSplicer
   # merges stockpiled frames with the given frame
   addRemoteFrameData: (frameData)->
     for userId, remoteFrame of @remoteFrames
-      # need if hands check here?
+      if (new Date).getTime() > (remoteFrame.sentAt + @options.frozenHandTimeout)
+        # if timestamp hasn't been updated within 250ms timeout, get rid of it
+        delete @remoteFrames[userId]
+        break
+
       for hand in remoteFrame.hands
         frameData.hands.push hand
 
@@ -102,6 +108,7 @@ Leap.plugin 'networking', (scope)->
   scope.connection = null
   scope.sendFrames = false
   scope.maxSendRate = 100 # ms
+  scope.frozenHandTimeout = 250 # ms
 
   frameSplicer = null
 
@@ -136,7 +143,7 @@ Leap.plugin 'networking', (scope)->
 
   scope.peer.on 'open', (id)=>
     console.log "Peer ID received: #{id}"
-    frameSplicer = new FrameSplicer(this, id)
+    frameSplicer = new FrameSplicer(this, id, scope)
 
   # give a second to begin local streaming  connect before immediately starting our own animation Loop
   setTimeout  ->
@@ -174,7 +181,7 @@ Leap.plugin 'networking', (scope)->
       # frameSplicer should always be created before the connection is done.
       console.assert frameSplicer
 
-      frameSplicer.makeIdsUniversal(frameData)
+      frameSplicer.supplementLocalFrameData(frameData)
 
       scope.sendFrame(frameData)
 
