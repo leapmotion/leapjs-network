@@ -7,7 +7,7 @@ See `index.html` for demo.
 
 ```javascript
   controller.use('networking', {
-    peer: new Peer({key: 'ah7pg4vez7kz9f6r'}),  // WebRTC is handled by the PeerJS library & service
+    peer: new Peer({key: 'myapikey'}),  // WebRTC is handled by the PeerJS library & service
     plotter: new LeapDataPlotter() // Optional - graphed debugging outputs
   });
 
