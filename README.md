@@ -31,7 +31,7 @@ CPU and network usage of this plugin are pretty good.  Being able to measure per
 
 To measure CPU usage (such as the data compression used here, or DOM manipulations), read this page: https://developer.leapmotion.com/leapjs/frame-loop
 
-To measure network performance, check out the graphs included on index.html, as well as `chrome://webrtc-internals`. (va [SO post](http://stackoverflow.com/questions/24847640/how-to-measure-bandwidth-of-a-webrtc-data-channel))
+To measure network performance, check out the graphs included on `index.html`, as well as `chrome://webrtc-internals`. (va [SO post](http://stackoverflow.com/questions/24847640/how-to-measure-bandwidth-of-a-webrtc-data-channel))
 
 
 ### Roadmap
