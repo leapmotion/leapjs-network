@@ -44,6 +44,8 @@
     });
 
     controller.use('networking', {
+      // This is @pehrlich's free API key.  Limited to 50 concurrent users, but probably good to try things out.
+      // See http://peerjs.com/peerserver
       peer: new Peer({key: 'ah7pg4vez7kz9f6r'}),
       plotter: new LeapDataPlotter()
     });
