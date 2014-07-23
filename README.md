@@ -27,7 +27,7 @@ Connected peers without the Leap, (or without their controller) will see remote 
 
 ### A note on performance
 
-Being able to measure performance, both in terms of bandwidth and CPU usage, is extremely important when developing real-time applications.
+CPU and network usage of this plugin are pretty good.  Being able to measure performance, both in terms of bandwidth and CPU usage, is extremely important when developing real-time applications, so check this yourself with your app.
 
 To measure CPU usage (such as the data compression used here, or DOM manipulations), read this page: https://developer.leapmotion.com/leapjs/frame-loop
 
