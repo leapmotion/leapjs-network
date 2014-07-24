@@ -3,7 +3,7 @@
 
 Allows LeapJS frame data to be streamed between peers via WebRTC.  Remote frames and local frames are merged and rendered together.
 
-See `index.html` for demo.
+See `index.html` for [live demo](http://leapmotion.github.io/leapjs-network).
 
 ```javascript
   controller.use('networking', {
