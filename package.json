@@ -1,0 +1,41 @@
+{
+  "name": "LeapJS-Networking",
+  "version": "0.1.0",
+  "description": "Use WebRTC to send LeapMotion data p2p",
+  "main": "build/leapjs.networking-0.1.0.js",
+  "dependencies": {},
+  "devDependencies": {
+    "coffee-script": ">=1.7.1",
+    "grunt": "~0.4.2",
+    "grunt-banner": "git://github.com/pehrlich/grunt-banner.git",
+    "grunt-bump": "0.0.13",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-coffee": "~0.8.2",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-connect": "^0.8.0",
+    "grunt-contrib-uglify": "~0.3.2",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-string-replace": "^0.2.7",
+    "load-grunt-tasks": "~0.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/leapmotion/leapjs-network.git"
+  },
+  "keywords": [
+    "leap",
+    "leapjs",
+    "plugins",
+    "extensions",
+    "webrtc",
+    "peerjs",
+    "networking",
+    "p2p"
+  ],
+  "author": "pehrlich",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "http://github.com/leapmotion/leapjs-network/issues"
+  },
+  "homepage": "http://github.com/leapmotion/leapjs-network"
+}
