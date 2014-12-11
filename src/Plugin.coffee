@@ -31,7 +31,8 @@ Leap.plugin 'networking', (scope)->
   scope.frozenHandTimeout = 250 # ms
 
   frameSplicer = null
-  framePacker = new FramePacker
+  scope.framePacker = framePacker = new FramePacker
+
 
   scope.peer.on 'error', (error)->
     console.log 'peerjs error, not sending frames:', error, error.type
