@@ -1,5 +1,5 @@
 /*                    
- * LeapJS Network - v0.1.0 - 2014-12-10                    
+ * LeapJS Network - v0.1.0 - 2014-12-11                    
  * http://github.com/leapmotion/leapjs-network/                    
  *                    
  * Copyright 2014 LeapMotion, Inc                    
@@ -227,7 +227,7 @@
     scope.maxSendRate = 60;
     scope.frozenHandTimeout = 250;
     frameSplicer = null;
-    framePacker = new FramePacker;
+    scope.framePacker = framePacker = new FramePacker;
     scope.peer.on('error', function(error) {
       console.log('peerjs error, not sending frames:', error, error.type);
       return scope.sendFrames = false;
