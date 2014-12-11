@@ -7,7 +7,8 @@ module.exports = (grunt) ->
     # note that for performance, watch does not minify. be sure to do so before shipping.
     watch: {
       options: {
-        livereload: true
+        livereload: true,
+        atBegin: true
       }
       coffee: {
         files: ['src/*.coffee'],
