@@ -47,9 +47,14 @@
     controller.use('networking', {
       // This is @pehrlich's free API key.  Limited to 50 concurrent users, but probably good to try things out.
       // See http://peerjs.com/peerserver
-      peer: new Peer({key: 'ah7pg4vez7kz9f6r'}),
+      peer: new Peer({key: 'k0ap3iwxm51p2e29'}),
       plotter: new LeapDataPlotter()
     });
+
+    // Uncomment for VR mode:
+//    controller.use('transform', {
+//      vr: true
+//    });
 
     controller.use('riggedHand', {
 // turns out that this function is horrendously slow.
