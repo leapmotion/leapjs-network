@@ -77,11 +77,12 @@ Leap.plugin 'networking', (scope)->
 
     # give a second to begin local streaming  connect before immediately starting our own animation Loop
     setTimeout  ->
-      frameSplicer.remoteFrameLoop();
+      frameSplicer.remoteFrameLoop()
     , 1000
 
   controller.on 'streamingStopped', ->
-    frameSplicer.remoteFrameLoop();
+    if frameSplicer
+      frameSplicer.remoteFrameLoop()
 
 
 
