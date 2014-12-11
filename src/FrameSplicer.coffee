@@ -27,7 +27,7 @@ class FrameSplicer
       frameSplicer.supplementFinishedFrame(frame, frameData)
 
       # this calls immediately, as there is no frame loop running for Leap-less clients.
-      window.controller.processFrame(frame);
+      @controller.processFrame(frame);
 
       window.requestAnimationFrame frameSplicer.remoteFrameLoop
 
