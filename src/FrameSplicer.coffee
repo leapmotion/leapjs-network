@@ -39,7 +39,7 @@ class FrameSplicer
       # hand is the rootmost object of a player, esp. after frames get merged.
       hand.userId = @userId
       hand.id += '-' + @userId
-      console.assert typeof hand.id is "string", "Invalid hand id: " + hand.id
+#      console.assert typeof hand.id is "string", "Invalid hand id: " + hand.id
 
     for pointable in frameData.pointables
       pointable.id += '-' + @userId

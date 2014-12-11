@@ -138,7 +138,7 @@ Leap.plugin 'networking', (scope)->
       return unless scope.sendFrames
 
       # frameSplicer should always be created before the connection is done.
-      console.assert frameSplicer
+#      console.assert frameSplicer
 
       frameSplicer.supplementLocalFrameData(frameData)
 

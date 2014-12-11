@@ -1,5 +1,5 @@
 /*                    
- * LeapJS Network - v0.1.0 - 2014-07-23                    
+ * LeapJS Network - v0.1.0 - 2014-12-10                    
  * http://github.com/leapmotion/leapjs-network/                    
  *                    
  * Copyright 2014 LeapMotion, Inc                    
@@ -112,7 +112,7 @@
         frameSplicer.addRemoteFrameData(frameData);
         frame = new Leap.Frame(frameData);
         frameSplicer.supplementFinishedFrame(frame, frameData);
-        window.controller.processFrame(frame);
+        this.controller.processFrame(frame);
         return window.requestAnimationFrame(frameSplicer.remoteFrameLoop);
       };
     }
@@ -126,7 +126,6 @@
         hand = _ref[_i];
         hand.userId = this.userId;
         hand.id += '-' + this.userId;
-        console.assert(typeof hand.id === "string", "Invalid hand id: " + hand.id);
       }
       _ref1 = frameData.pointables;
       _results = [];
@@ -261,7 +260,9 @@
       }, 1000);
     });
     controller.on('streamingStopped', function() {
-      return frameSplicer.remoteFrameLoop();
+      if (frameSplicer) {
+        return frameSplicer.remoteFrameLoop();
+      }
     });
     scope.lastFrame = null;
     scope.shouldSendFrame = function(frameData) {
@@ -297,7 +298,6 @@
         if (!scope.sendFrames) {
           return;
         }
-        console.assert(frameSplicer);
         frameSplicer.supplementLocalFrameData(frameData);
         scope.sendFrame(frameData);
         return frameSplicer.addRemoteFrameData(frameData);
